@@ -1,7 +1,10 @@
 """ブラウザ操作モジュール - Playwright を使用した X へのログイン処理"""
+import os
 import asyncio
 from playwright.async_api import async_playwright
 from src.config import Config
+
+SCREENSHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "screenshots")
 
 
 class XBrowser:
@@ -12,6 +15,15 @@ class XBrowser:
         self.context = None
         self.page = None
         self.playwright = None
+
+    async def save_screenshot(self, name):
+        """デバッグ用スクリーンショットを保存"""
+        if not self.page:
+            return
+        os.makedirs(SCREENSHOT_DIR, exist_ok=True)
+        path = os.path.join(SCREENSHOT_DIR, f"{name}.png")
+        await self.page.screenshot(path=path, full_page=True)
+        print(f"[DEBUG] スクリーンショット保存: {path}")
 
     async def launch(self):
         """ブラウザを起動"""
@@ -41,15 +53,78 @@ class XBrowser:
         try:
             print("[INFO] X ログインページに移動中...")
             await self.page.goto(Config.X_LOGIN_URL, wait_until="networkidle")
-            await self.page.wait_for_timeout(2000)
+            await self.page.wait_for_timeout(3000)
+            await self.save_screenshot("01_login_page")
 
-            # ユーザー名入力
-            print("[INFO] ユーザー名を入力中...")
-            username_input = self.page.locator('input[autocomplete="username"]')
-            await username_input.wait_for(state="visible", timeout=15000)
+            # ページのHTMLも出力（デバッグ用）
+            page_title = await self.page.title()
+            page_url = self.page.url
+            print(f"[DEBUG] ページタイトル: {page_title}")
+            print(f"[DEBUG] 現在のURL: {page_url}")
+
+            # ユーザー名入力 - 複数のセレクターを試行
+            print("[INFO] ユーザー名入力欄を検索中...")
+            username_input = None
+            selectors = [
+                'input[autocomplete="username"]',
+                'input[name="text"]',
+                'input[type="text"]',
+                'input[data-testid="ocfEnterTextTextInput"]',
+            ]
+            for sel in selectors:
+                try:
+                    loc = self.page.locator(sel)
+                    if await loc.count() > 0:
+                        if await loc.first.is_visible(timeout=3000):
+                            username_input = loc.first
+                            print(f"[DEBUG] ユーザー名入力欄を発見: {sel}")
+                            break
+                except Exception:
+                    continue
+
+            if not username_input:
+                await self.save_screenshot("02_username_not_found")
+                # ページの入力要素一覧をデバッグ出力
+                inputs = await self.page.query_selector_all("input")
+                print(f"[DEBUG] ページ上のinput要素数: {len(inputs)}")
+                for i, inp in enumerate(inputs):
+                    inp_type = await inp.get_attribute("type") or ""
+                    inp_name = await inp.get_attribute("name") or ""
+                    inp_auto = await inp.get_attribute("autocomplete") or ""
+                    inp_placeholder = await inp.get_attribute("placeholder") or ""
+                    print(f"[DEBUG]   input[{i}]: type={inp_type}, name={inp_name}, autocomplete={inp_auto}, placeholder={inp_placeholder}")
+                print("[ERROR] ユーザー名入力欄が見つかりません")
+                return False
+
             await username_input.fill(Config.X_USERNAME)
-            await self.page.locator('text="次へ"').click()
-            await self.page.wait_for_timeout(2000)
+            await self.save_screenshot("03_username_filled")
+
+            # 「次へ」ボタンをクリック
+            next_button = None
+            next_selectors = [
+                'text="次へ"',
+                'text="Next"',
+                '[role="button"]:has-text("次へ")',
+                '[role="button"]:has-text("Next")',
+            ]
+            for sel in next_selectors:
+                try:
+                    loc = self.page.locator(sel)
+                    if await loc.count() > 0:
+                        next_button = loc.first
+                        print(f"[DEBUG] 次へボタンを発見: {sel}")
+                        break
+                except Exception:
+                    continue
+
+            if next_button:
+                await next_button.click()
+            else:
+                print("[WARN] 次へボタンが見つかりません。Enterキーで代替します")
+                await username_input.press("Enter")
+
+            await self.page.wait_for_timeout(3000)
+            await self.save_screenshot("04_after_username")
 
             # メールアドレス確認が求められる場合
             try:
@@ -57,8 +132,17 @@ class XBrowser:
                 if await email_input.is_visible(timeout=3000):
                     print("[INFO] メールアドレス確認を入力中...")
                     await email_input.fill(Config.X_EMAIL)
-                    await self.page.locator('text="次へ"').click()
-                    await self.page.wait_for_timeout(2000)
+                    await self.save_screenshot("05_email_filled")
+                    # 次へボタン
+                    for sel in next_selectors:
+                        try:
+                            loc = self.page.locator(sel)
+                            if await loc.count() > 0:
+                                await loc.first.click()
+                                break
+                        except Exception:
+                            continue
+                    await self.page.wait_for_timeout(3000)
             except Exception:
                 pass
 
@@ -67,16 +151,48 @@ class XBrowser:
             password_input = self.page.locator('input[type="password"]')
             await password_input.wait_for(state="visible", timeout=10000)
             await password_input.fill(Config.X_PASSWORD)
-            await self.page.locator('[data-testid="LoginForm_Login_Button"]').click()
-            await self.page.wait_for_timeout(3000)
+            await self.save_screenshot("06_password_filled")
+
+            # ログインボタン
+            login_button = None
+            login_selectors = [
+                '[data-testid="LoginForm_Login_Button"]',
+                'text="ログイン"',
+                'text="Log in"',
+            ]
+            for sel in login_selectors:
+                try:
+                    loc = self.page.locator(sel)
+                    if await loc.count() > 0:
+                        login_button = loc.first
+                        print(f"[DEBUG] ログインボタンを発見: {sel}")
+                        break
+                except Exception:
+                    continue
+
+            if login_button:
+                await login_button.click()
+            else:
+                print("[WARN] ログインボタンが見つかりません。Enterキーで代替します")
+                await password_input.press("Enter")
+
+            await self.page.wait_for_timeout(5000)
+            await self.save_screenshot("07_after_login")
 
             # ログイン成功の確認
-            await self.page.wait_for_url("**/home", timeout=15000)
-            print("[INFO] ログインに成功しました")
-            return True
+            current_url = self.page.url
+            print(f"[DEBUG] ログイン後のURL: {current_url}")
+            if "home" in current_url:
+                print("[INFO] ログインに成功しました")
+                return True
+            else:
+                print(f"[WARN] ホームページにリダイレクトされませんでした: {current_url}")
+                await self.save_screenshot("08_login_unexpected")
+                return False
 
         except Exception as e:
             print(f"[ERROR] ログインに失敗しました: {e}")
+            await self.save_screenshot("99_error")
             return False
 
     async def close(self):
