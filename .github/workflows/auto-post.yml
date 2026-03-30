@@ -2,6 +2,75 @@ name: X Scheduled Post
 
 on:
   schedule:
+    - cron: '0 0 * * *'
+    - cron: '0 2 * * *'
+    - cron: '0 4 * * *'
+    - cron: '0 6 * * *'
+    - cron: '0 8 * * *'
+    - cron: '0 10 * * *'
+    - cron: '0 12 * * *'
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Message to post (optional)'
+        required: false
+        default: ''
+      slot:
+        description: 'Schedule slot number (1-8)'
+        required: false
+        default: ''
+
+jobs:
+  scheduled-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run scheduled post
+        continue-on-error: true
+        env:
+          X_USERNAME: ${{ secrets.X_USERNAME }}
+          X_PASSWORD: ${{ secrets.X_PASSWORD }}
+          X_EMAIL: ${{ secrets.X_EMAIL }}
+          HEADLESS: 'true'
+        run: |
+          if [ -n "${{ github.event.inputs.message }}" ]; then
+            python src/main.py --message "${{ github.event.inputs.message }}"
+          elif [ -n "${{ github.event.inputs.slot }}" ]; then
+            python src/main.py --slot ${{ github.event.inputs.slot }}
+          else
+            python src/main.py
+          fi
+
+      - name: Upload debug screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
+          retention-days: 7
+name: X Scheduled Post
+
+on:
+  schedule:
     # 1日8回 (2時間おき) - JST 9,11,13,15,17,19,21,23時
     - cron: '0 0 * * *'   # UTC 00:00 = JST 09:00 (slot 1)
     - cron: '0 2 * * *'   # UTC 02:00 = JST 11:00 (slot 2)
