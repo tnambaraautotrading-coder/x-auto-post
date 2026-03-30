@@ -1,0 +1,16 @@
+{
+    "messages": [
+          {
+                  "text": "おはようございます！今日も一日頑張りましょう！",
+                  "category": "greeting"
+          },
+          {
+                  "text": "本日のマーケット情報をチェック中です。",
+                  "category": "market"
+          },
+          {
+                  "text": "自動投稿テスト中です。問題なく動作しています。",
+                  "category": "test"
+          }
+    ]
+}
