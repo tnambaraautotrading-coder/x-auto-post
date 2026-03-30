@@ -1,17 +1,29 @@
-name: X Auto Post
+name: X Scheduled Post
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    # 1日8回 (2時間おき) - JST 9,11,13,15,17,19,21,23時
+    - cron: '0 0 * * *'   # UTC 00:00 = JST 09:00 (slot 1)
+    - cron: '0 2 * * *'   # UTC 02:00 = JST 11:00 (slot 2)
+    - cron: '0 4 * * *'   # UTC 04:00 = JST 13:00 (slot 3)
+    - cron: '0 6 * * *'   # UTC 06:00 = JST 15:00 (slot 4)
+    - cron: '0 8 * * *'   # UTC 08:00 = JST 17:00 (slot 5)
+    - cron: '0 10 * * *'  # UTC 10:00 = JST 19:00 (slot 6)
+    - cron: '0 12 * * *'  # UTC 12:00 = JST 21:00 (slot 7)
+    - cron: '0 14 * * *'  # UTC 14:00 = JST 23:00 (slot 8)
   workflow_dispatch:
     inputs:
       message:
-        description: 'Message to post'
+        description: 'Message to post (optional)'
+        required: false
+        type: string
+      slot:
+        description: 'Schedule slot number (1-8)'
         required: false
         type: string
 
 jobs:
-  auto-post:
+  scheduled-post:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -30,7 +42,7 @@ jobs:
       - name: Install Playwright browsers
         run: playwright install chromium --with-deps
 
-      - name: Run auto post
+      - name: Run scheduled post
         env:
           X_USERNAME: ${{ secrets.X_USERNAME }}
           X_PASSWORD: ${{ secrets.X_PASSWORD }}
@@ -39,6 +51,8 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.message }}" ]; then
             python src/main.py --message "${{ github.event.inputs.message }}"
+          elif [ -n "${{ github.event.inputs.slot }}" ]; then
+            python src/main.py --slot ${{ github.event.inputs.slot }}
           else
             python src/main.py
           fi
