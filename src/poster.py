@@ -21,14 +21,14 @@ SCHEDULE_SLOTS = {
 def load_messages():
     """メッセージファイルを読み込む"""
     messages_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "posts",
         "messages.json"
     )
     try:
         with open(messages_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return data.get("messages", [])
+        return data.get("schedule", [])
     except FileNotFoundError:
         print(f"[ERROR] メッセージファイルが見つかりません: {messages_path}")
         return []
@@ -41,6 +41,7 @@ def get_scheduled_message(slot=None):
     """スケジュールスロットに基づいてメッセージを取得"""
     messages = load_messages()
     if not messages:
+        print("[ERROR] メッセージリストが空です")
         return None
 
     if slot is not None:
@@ -58,7 +59,11 @@ def get_scheduled_message(slot=None):
             slot = 1
 
     index = (slot - 1) % len(messages)
-    return messages[index]
+    entry = messages[index]
+
+    if isinstance(entry, dict):
+        return entry.get("text", "")
+    return str(entry)
 
 
 async def post_message(page, message):
