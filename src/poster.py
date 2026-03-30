@@ -1,100 +1,94 @@
-"""予約投稿モジュール - スケジュールに基づいて X へ投稿"""
+"""投稿管理モジュール - 予約投稿対応"""
 import json
 import os
 from datetime import datetime, timezone, timedelta
-from playwright.async_api import Page
 
 
 JST = timezone(timedelta(hours=9))
 
+SCHEDULE_SLOTS = {
+    1: "09:00",
+    2: "11:00",
+    3: "13:00",
+    4: "15:00",
+    5: "17:00",
+    6: "19:00",
+    7: "21:00",
+    8: "23:00",
+}
 
-class XPoster:
-          """X への予約投稿を管理するクラス"""
 
-    MESSAGES_FILE = os.path.join(os.path.dirname(__file__), "..", "posts", "messages.json")
+def load_messages():
+    """メッセージファイルを読み込む"""
+    messages_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "posts",
+        "messages.json"
+    )
+    try:
+        with open(messages_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("messages", [])
+    except FileNotFoundError:
+        print(f"[ERROR] メッセージファイルが見つかりません: {messages_path}")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"[ERROR] JSONの解析に失敗: {e}")
+        return []
 
-    def __init__(self, page: Page):
-                  self.page = page
 
-    async def post(self, message: str) -> bool:
-                  """メッセージを X に投稿"""
-                  try:
-                                    print(f"[INFO] 投稿を開始: {message[:50]}...")
+def get_scheduled_message(slot=None):
+    """スケジュールスロットに基づいてメッセージを取得"""
+    messages = load_messages()
+    if not messages:
+        return None
 
-                      # ホーム画面の投稿ボックスをクリック
-                                    compose_box = self.page.locator('[data-testid="tweetTextarea_0"]')
-                                    await compose_box.wait_for(state="visible", timeout=10000)
-                                    await compose_box.click()
-                                    await self.page.wait_for_timeout(500)
+    if slot is not None:
+        slot = int(slot)
+    else:
+        now = datetime.now(JST)
+        current_hour = now.hour
+        slot = None
+        for s, time_str in SCHEDULE_SLOTS.items():
+            hour = int(time_str.split(":")[0])
+            if hour == current_hour:
+                slot = s
+                break
+        if slot is None:
+            slot = 1
 
-                      # メッセージを入力
-                                    await compose_box.fill(message)
-                                    await self.page.wait_for_timeout(1000)
+    index = (slot - 1) % len(messages)
+    return messages[index]
 
-                      # 投稿ボタンをクリック
-                                    post_button = self.page.locator('[data-testid="tweetButtonInline"]')
-                                    await post_button.wait_for(state="visible", timeout=5000)
-                                    await post_button.click()
-                                    await self.page.wait_for_timeout(3000)
 
-                      print(f"[INFO] 投稿が完了しました: {message[:50]}...")
-            self._log_post(message)
-            return True
+async def post_message(page, message):
+    """X にメッセージを投稿"""
+    try:
+        print(f"[INFO] 投稿を作成中: {message[:50]}...")
 
-except Exception as e:
-            print(f"[ERROR] 投稿に失敗しました: {e}")
-            return False
+        # ホームページに移動
+        await page.goto("https://x.com/home", wait_until="networkidle")
+        await page.wait_for_timeout(2000)
 
-    def get_scheduled_message(self, slot: int | None = None) -> str | None:
-                  """スケジュールからスロット番号に対応するメッセージを取得"""
-        try:
-                          with open(self.MESSAGES_FILE, "r", encoding="utf-8") as f:
-                                                data = json.load(f)
+        # 投稿テキストエリアをクリック
+        tweet_box = page.locator('[data-testid="tweetTextarea_0"]')
+        await tweet_box.wait_for(state="visible", timeout=10000)
+        await tweet_box.click()
+        await page.wait_for_timeout(500)
 
-                          schedule = data.get("schedule", [])
-                          if not schedule:
-                                                print("[WARN] スケジュールが見つかりません")
-                                                return None
+        # メッセージを入力
+        await tweet_box.fill(message)
+        await page.wait_for_timeout(1000)
 
-                          if slot is not None:
-                                                # 指定されたスロットのメッセージを取得
-                                                for entry in schedule:
-                                                                          if entry.get("slot") == slot:
-                                                                                                        return entry.get("text", "")
-                                                                                                print(f"[WARN] スロット {slot} のメッセージが見つかりません")
-                                                                      return None
+        # 投稿ボタンをクリック
+        post_button = page.locator('[data-testid="tweetButtonInline"]')
+        await post_button.wait_for(state="visible", timeout=5000)
+        await post_button.click()
+        await page.wait_for_timeout(3000)
 
-            # スロット未指定時は現在時刻 (UTC) から自動判定
-                          now_utc = datetime.now(timezone.utc)
-                          current_hour = now_utc.hour
-                          best_match = None
-                          for entry in schedule:
-                                                entry_hour = int(entry["time_utc"].split(":")[0])
-                                                if entry_hour == current_hour:
-                                                                          best_match = entry
-                                                                          break
-                                                                  if best_match:
-                                                                                        return best_match.get("text", "")
+        print("[INFO] 投稿が完了しました")
+        return True
 
-                                            print(f"[WARN] 現在時刻 (UTC {current_hour}:00) に該当するスケジュールがありません")
-            return None
-
-except FileNotFoundError:
-            print(f"[ERROR] メッセージファイルが見つかりません: {self.MESSAGES_FILE}")
-            return None
-except json.JSONDecodeError:
-            print("[ERROR] メッセージファイルの JSON が不正です")
-            return None
-
-    @staticmethod
-    def _log_post(message: str) -> None:
-                  """投稿ログを記録"""
-        log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
-        os.makedirs(log_dir, exist_ok=True)
-
-        log_file = os.path.join(log_dir, "post_log.txt")
-        now_jst = datetime.now(JST)
-        timestamp = now_jst.strftime("%Y-%m-%d %H:%M:%S JST")
-
-        with open(log_file, "a", encoding="utf-8") as f:
-                          f.write(f"[{timestamp}] {message}\n")
+    except Exception as e:
+        print(f"[ERROR] 投稿に失敗しました: {e}")
+        return False
