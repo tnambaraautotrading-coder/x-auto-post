@@ -1,66 +1,59 @@
-"""X 予約投稿メインスクリプト"""
-import argparse
-import asyncio
+"""X 予約投稿ツール - メインスクリプト"""
 import sys
 import os
+import asyncio
+import argparse
 
 # プロジェクトルートをパスに追加
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import Config
 from src.browser import XBrowser
-from src.poster import XPoster
+from src.poster import get_scheduled_message, post_message
 
 
-async def run(message=None, slot=None):
+async def run(slot=None, message=None):
     """メイン実行関数"""
     print("=" * 50)
-    print("X Auto Post - 予約投稿ツール")
+    print("X 予約投稿ツール")
     print("=" * 50)
 
     # 設定の検証
     if not Config.validate():
-        print("[ERROR] 設定に不備があります。.env ファイルを確認してください。")
+        print("[ERROR] 設定が不正です。終了します。")
         sys.exit(1)
 
+    # メッセージ取得
+    if message:
+        post_text = message
+    else:
+        post_text = get_scheduled_message(slot)
+
+    if not post_text:
+        print("[ERROR] 投稿するメッセージがありません")
+        sys.exit(1)
+
+    print(f"[INFO] スロット: {slot}")
+    print(f"[INFO] 投稿内容: {post_text[:80]}...")
+
+    # ブラウザ操作
     browser = XBrowser()
-
     try:
-        # ブラウザ起動
         await browser.launch()
-
-        # ログイン
-        login_success = await browser.login()
-        if not login_success:
-            print("[ERROR] ログインに失敗しました。認証情報を確認してください。")
+        login_ok = await browser.login()
+        if not login_ok:
+            print("[ERROR] ログインに失敗しました")
             sys.exit(1)
 
-        # 投稿処理
-        poster = XPoster(browser.page)
-
-        if message:
-            # コマンドライン引数で指定されたメッセージを投稿
-            post_message = message
+        result = await post_message(browser.page, post_text)
+        if result:
+            print("[SUCCESS] 投稿が完了しました！")
         else:
-            # スケジュールからメッセージを取得
-            post_message = poster.get_scheduled_message(slot=slot)
-
-        if post_message:
-            success = await poster.post(post_message)
-        else:
-            print("[ERROR] 投稿するメッセージがありません")
-            success = False
-
-        if success:
-            print("[INFO] 予約投稿が正常に完了しました")
-        else:
-            print("[ERROR] 予約投稿に失敗しました")
+            print("[ERROR] 投稿に失敗しました")
             sys.exit(1)
-
     except Exception as e:
-        print(f"[ERROR] 予期しないエラーが発生しました: {e}")
+        print(f"[ERROR] 予期しないエラー: {e}")
         sys.exit(1)
-
     finally:
         await browser.close()
 
@@ -68,21 +61,11 @@ async def run(message=None, slot=None):
 def main():
     """エントリーポイント"""
     parser = argparse.ArgumentParser(description="X 予約投稿ツール")
-    parser.add_argument(
-        "--message", "-m",
-        type=str,
-        default=None,
-        help="投稿するメッセージ（省略時はスケジュールから取得）",
-    )
-    parser.add_argument(
-        "--slot", "-s",
-        type=int,
-        default=None,
-        help="投稿スロット番号 (1-8)",
-    )
+    parser.add_argument("--slot", type=int, default=None, help="スケジュールスロット番号 (1-8)")
+    parser.add_argument("--message", type=str, default=None, help="投稿メッセージ（直接指定）")
     args = parser.parse_args()
 
-    asyncio.run(run(message=args.message, slot=args.slot))
+    asyncio.run(run(slot=args.slot, message=args.message))
 
 
 if __name__ == "__main__":
