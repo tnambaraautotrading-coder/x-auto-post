@@ -128,6 +128,13 @@ python src/main.py --message "本日のマーケット解説です📈" --media 
 }
 ```
 
+### 3. 生成用プロンプト・台本
+
+ローカルの Claude Code にコピペするだけで動画生成を始められる素材を `prompts/` に用意しています。
+
+- `prompts/higgsfield_nambara_video.md` … Higgsfield 用の生成プロンプト雛形（穴埋め式 + 記入例）
+- `prompts/narration_samples.md` … マーケット解説のナレーション台本（8スロット分）
+
 ## プロジェクト構成
 
 ```
@@ -142,6 +149,7 @@ x-auto-post/
 │   └── config.py               # 設定管理
 ├── posts/
 │   └── messages.json           # 投稿メッセージ一覧
+├── prompts/                    # 動画生成プロンプト・ナレーション台本
 ├── media/                      # 投稿に添付する動画/画像
 ├── .mcp.json                   # Higgsfield MCP サーバー設定
 ├── .env.example                # 環境変数テンプレート
