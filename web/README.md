@@ -37,7 +37,13 @@ web/
 │   │   ├── Badge/            # 投稿ステータスのバッジ
 │   │   ├── Avatar/           # ユーザー/ブランドのアバター
 │   │   ├── PostCard/         # マーケットレポート投稿カード
-│   │   └── ScheduleTable/    # 投稿スケジュール一覧
+│   │   ├── ScheduleTable/    # 投稿スケジュール一覧
+│   │   ├── Input/            # 1行テキスト入力（label/error/hint）
+│   │   ├── Textarea/         # 複数行テキスト入力
+│   │   ├── Select/           # ドロップダウン選択
+│   │   ├── Switch/           # オン/オフのトグル
+│   │   ├── Alert/            # 状態通知バナー（info/success/warning/error）
+│   │   └── Modal/            # モーダルダイアログ
 │   ├── App.tsx               # デモダッシュボード
 │   └── index.ts              # ライブラリのエントリポイント
 ├── tailwind.config.ts        # デザイントークンの semantic 名を列挙したプリセット
