@@ -1,0 +1,22 @@
+{
+  "projectId": "d0fc5609-32d9-48f1-a2f1-c6e401ff932f",
+  "shape": "storybook",
+  "storybookConfigDir": ".storybook",
+  "storybookStatic": ".design-sync/sb-reference",
+  "pkg": "x-auto-post-design-assets",
+  "globalName": "XAutoPostDS",
+  "entry": "src/design/index.ts",
+  "buildCmd": "",
+  "extraFonts": [
+    "node_modules/@fontsource/inter/latin-400.css",
+    "node_modules/@fontsource/inter/latin-500.css",
+    "node_modules/@fontsource/inter/latin-600.css",
+    "node_modules/@fontsource/inter/latin-700.css",
+    "node_modules/@fontsource/inter/latin-800.css",
+    "node_modules/@fontsource/inter/latin-900.css"
+  ],
+  "overrides": {
+    "PostCard": { "cardMode": "column" }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
