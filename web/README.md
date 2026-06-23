@@ -43,7 +43,13 @@ web/
 │   │   ├── Select/           # ドロップダウン選択
 │   │   ├── Switch/           # オン/オフのトグル
 │   │   ├── Alert/            # 状態通知バナー（info/success/warning/error）
-│   │   └── Modal/            # モーダルダイアログ
+│   │   ├── Modal/            # モーダルダイアログ
+│   │   ├── Card/             # 汎用カードコンテナ
+│   │   ├── Spinner/          # 読み込み中インジケータ
+│   │   ├── Tabs/             # タブナビゲーション
+│   │   ├── Tooltip/          # ホバー補足表示
+│   │   ├── Pagination/       # ページ送り
+│   │   └── EmptyState/       # データ無しプレースホルダ
 │   ├── App.tsx               # デモダッシュボード
 │   └── index.ts              # ライブラリのエントリポイント
 ├── tailwind.config.ts        # デザイントークンの semantic 名を列挙したプリセット
