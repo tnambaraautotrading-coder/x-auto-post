@@ -1,0 +1,67 @@
+/**
+ * デザイントークン — x-auto-post UI
+ *
+ * すべての色・余白・タイポグラフィの「真実の源」。
+ * Tailwind の semantic クラス（bg-surface-1, text-brand など）はここの CSS 変数を参照する。
+ * マーケット情報を扱うブランドのため、紺ベース + 上昇=緑 / 下落=赤 のアクセントを持つ。
+ */
+:root {
+  /* --- Brand --- */
+  --color-brand: #0b1f3a; /* 深い紺。ヘッダー・主要面 */
+  --color-brand-strong: #06142a;
+  --color-accent: #1d9bf6; /* X ブルー。主要アクション */
+  --color-accent-strong: #1a8cdd;
+
+  /* --- Surfaces（面の階層） --- */
+  --color-surface-0: #ffffff;
+  --color-surface-1: #f6f8fb;
+  --color-surface-2: #eaeef4;
+  --color-surface-inverse: #0b1f3a;
+
+  /* --- Text --- */
+  --color-text-strong: #0b1f3a;
+  --color-text: #243b53;
+  --color-text-muted: #5b7186;
+  --color-text-inverse: #f6f8fb;
+
+  /* --- Border --- */
+  --color-border: #d4dde7;
+  --color-border-strong: #b3c2d1;
+
+  /* --- Market（市場の方向） --- */
+  --color-up: #16a34a; /* 上昇 */
+  --color-down: #dc2626; /* 下落 */
+  --color-flat: #5b7186; /* 変わらず */
+
+  /* --- Status（投稿ステータス） --- */
+  --color-status-scheduled: #1d9bf6; /* 予約済み */
+  --color-status-posted: #16a34a; /* 投稿済み */
+  --color-status-failed: #dc2626; /* 失敗 */
+  --color-status-draft: #5b7186; /* 下書き */
+
+  /* --- Radius --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
+
+  /* --- Spacing scale（4px グリッド） --- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+
+  /* --- Typography --- */
+  --font-sans: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-size-caption: 12px;
+  --font-size-body: 14px;
+  --font-size-title: 18px;
+  --font-size-display: 24px;
+
+  /* --- Shadow --- */
+  --shadow-card: 0 1px 2px rgba(11, 31, 58, 0.06),
+    0 4px 12px rgba(11, 31, 58, 0.08);
+}
