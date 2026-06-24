@@ -34,6 +34,8 @@ Minor proposal-quality tweaks to `sakurazaka-deck.css` only — no `.tsx`/asset 
 - **16-slide overview**: gold leading-zero index badges (01-16) per thumbnail via a `.sz-stage--overview` CSS counter — turns the overview into a referenceable contact sheet.
 PostCard was re-confirmed `match` via the driver's `reference_drift` canary spot-check (sz-* and post-card__* namespaces don't collide).
 
+- 2026-06-24: manual browser verification complete — claude.ai/design (owner 南原, Published) shows both PostCard & SakurazakaDeck with live previews and all 17 SakurazakaDeck variants in the README.
+
 ## Component quirks (documented in conventions.md for the design agent)
 
 - Avatar glyph is the **hardcoded character `南`** — `accountName`/`handle` do not change it.
