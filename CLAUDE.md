@@ -20,13 +20,27 @@ Use this file as the project map for Claude Code sessions. Keep it short: long p
 
 ## Default workflow
 
+- If the session starts from an unclear state, run `/work-start` before doing anything else.
 - Before editing, run `git status --short --branch` and identify unrelated local work.
 - Do not stage broad paths such as `git add -A` when media, generated outputs, or unrelated files are present.
 - Keep unrelated work out of design-system PRs. For this repo, check for accidental `media/**`, `projects/**`, `checkpoints/**`, `storybook-static/**`, `ds-bundle/**`, `.env`, and `secrets/**`.
+- If the branch has mixed/unrelated work, run `/clean-branch-plan` before pushing or opening a PR.
 - Before a commit or PR, run `/pr-scope-audit`.
 - Before design sync or UI handoff, run `/design-sync-check`.
+- When comparing proposal/deck visuals before and after Claude Design work, run `/design-compare`.
 - Before asking for review or marking work done, run `/review-ready`.
 - When ending a session, run `/session-handoff` and include what was changed, what was verified, what is blocked, and the exact next action.
+- After adding or changing files under `.claude/skills/`, use `/reload-skills` or restart Claude Code so new slash commands are available.
+
+## Useful built-in commands
+
+- `/plan`: use before broad changes or when the user says the direction is unclear.
+- `/context`: check what is filling the context window during long sessions.
+- `/compact <focus>`: preserve important state before the context gets noisy, for example `/compact focus on current branch, changed files, blockers, next action`.
+- `/diff`: inspect local changes before committing.
+- `/code-review`: run a correctness-focused review before asking a human to review.
+- `/security-review`: use when changes touch auth, credentials, external APIs, or deployment.
+- `/remote-control`: use when the user wants to watch or continue the same local session from a phone.
 
 ## Safety rules
 
