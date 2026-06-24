@@ -25,6 +25,7 @@ Use this file as the project map for Claude Code sessions. Keep it short: long p
 - Keep unrelated work out of design-system PRs. For this repo, check for accidental `media/**`, `projects/**`, `checkpoints/**`, `storybook-static/**`, `ds-bundle/**`, `.env`, and `secrets/**`.
 - Before a commit or PR, run `/pr-scope-audit`.
 - Before design sync or UI handoff, run `/design-sync-check`.
+- Before asking for review or marking work done, run `/review-ready`.
 - When ending a session, run `/session-handoff` and include what was changed, what was verified, what is blocked, and the exact next action.
 
 ## Safety rules
@@ -33,4 +34,4 @@ Use this file as the project map for Claude Code sessions. Keep it short: long p
 - `.env.example` is allowed because it contains placeholders.
 - Push/PR only after confirming the branch base, commit list, changed files, and validation results.
 - For Claude Design work, keep generated cache/build folders untracked unless explicitly requested.
-
+- Path-specific design rules live in `.claude/rules/design-system.md` and should guide changes under `src/design/`, `.design-sync/`, and `.storybook/`.
