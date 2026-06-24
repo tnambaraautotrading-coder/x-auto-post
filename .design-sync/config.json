@@ -16,7 +16,12 @@
     "node_modules/@fontsource/inter/latin-900.css"
   ],
   "overrides": {
-    "PostCard": { "cardMode": "column" }
+    "PostCard": { "cardMode": "column" },
+    "SakurazakaDeck": {
+      "cardMode": "single",
+      "primaryStory": "FullDeck",
+      "viewport": "1440x1000"
+    }
   },
   "readmeHeader": ".design-sync/conventions.md"
 }
