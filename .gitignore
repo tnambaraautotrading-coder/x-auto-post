@@ -47,3 +47,14 @@ cookies/
 secrets/
 *.pem
 *.key
+
+# Design Sync / Storybook generated artifacts
+.design-sync/sb-reference/
+.design-sync/learnings/
+.design-sync/.cache/
+.design-sync/node_modules
+.ds-sync/
+ds-bundle/
+storybook-static/
+node_modules/
+storybook-static/
