@@ -7,6 +7,19 @@ import type { Config } from "tailwindcss";
  */
 const config: Config = {
   content: ["./index.html", "./src/**/*.{ts,tsx}", "./.storybook/**/*.{ts,tsx}"],
+  // デザインエージェントが conventions.md の語彙を使ってもクラスが削除されないよう、
+  // semantic トークンクラスを safelist で常に生成する。
+  safelist: [
+    {
+      pattern:
+        /^(bg|text|border)-(surface|content|brand|accent|line|status|market)(-[a-z0-9]+)?$/,
+      variants: ["hover", "focus-visible"],
+    },
+    { pattern: /^rounded-(sm|md|lg|pill)$/ },
+    { pattern: /^(p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap)-(xs|sm|md|lg|xl|2xl)$/ },
+    { pattern: /^text-(caption|body|title|display)$/ },
+    { pattern: /^shadow-card$/ },
+  ],
   theme: {
     extend: {
       colors: {
