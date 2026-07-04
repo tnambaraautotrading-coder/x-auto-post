@@ -13,16 +13,12 @@ class Config:
     X_PASSWORD = os.getenv("X_PASSWORD", "")
     X_EMAIL = os.getenv("X_EMAIL", "")
 
-    # 予約投稿設定
-    POSTS_PER_DAY = int(os.getenv("POSTS_PER_DAY", "8"))
-
     # ブラウザ設定
     HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
     SLOW_MO = int(os.getenv("SLOW_MO", "100"))
     BROWSER_TIMEOUT = int(os.getenv("BROWSER_TIMEOUT", "30000"))
 
     # X の URL
-    X_BASE_URL = "https://x.com"
     X_LOGIN_URL = "https://x.com/i/flow/login"
     X_HOME_URL = "https://x.com/home"
 
