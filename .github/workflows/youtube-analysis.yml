@@ -1,0 +1,74 @@
+name: YouTube Analysis
+
+on:
+  schedule:
+    # 毎週月曜 9:00 JST (0:00 UTC)
+    - cron: '0 0 * * 1'
+  # 一時的な動作確認用トリガー (マージ前に削除する)
+  push:
+    branches: [claude/instagram-reel-recreation-rs7ji4]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: '分析するチャンネル (@handle / チャンネルID / URL)'
+        required: false
+        default: ''
+      search:
+        description: '検索キーワードで分析 (channel と排他)'
+        required: false
+        default: ''
+      max_videos:
+        description: '分析する動画数'
+        required: false
+        default: '100'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run YouTube analysis
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          YT_TARGET_CHANNEL: ${{ vars.YT_TARGET_CHANNEL }}
+        run: |
+          if [ -n "${{ github.event.inputs.search }}" ]; then
+            python -m youtube_analysis --search "${{ github.event.inputs.search }}" --max-videos "${{ github.event.inputs.max_videos || '100' }}"
+          elif [ -n "${{ github.event.inputs.channel }}" ]; then
+            python -m youtube_analysis --channel "${{ github.event.inputs.channel }}" --max-videos "${{ github.event.inputs.max_videos || '100' }}"
+          elif [ -n "$YT_TARGET_CHANNEL" ]; then
+            python -m youtube_analysis --channel "$YT_TARGET_CHANNEL" --json
+          else
+            echo "YT_TARGET_CHANNEL 未設定のため、キーワード検索で動作確認します。"
+            python -m youtube_analysis --search "Claude Code 副業" --json
+          fi
+
+      - name: Show report in log
+        if: always()
+        run: |
+          for f in reports/youtube/*.md; do
+            echo "===== $f ====="
+            cat "$f"
+          done
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-analysis-report
+          path: reports/youtube/
+          if-no-files-found: ignore
+          retention-days: 30

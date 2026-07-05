@@ -38,6 +38,9 @@ Thumbs.db
 *.log
 logs/
 
+# YouTube analysis reports (ローカル生成物)
+reports/
+
 # Session data
 session_data/
 cookies/
