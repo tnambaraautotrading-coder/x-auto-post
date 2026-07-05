@@ -92,9 +92,21 @@ python -m youtube_analysis --search "AI 副業"
 
 # API キーなしで動作確認（サンプルデータ）
 python -m youtube_analysis --demo
+
+# 分析結果を JSON でも保存（Claude Code に読ませて追加分析する場合に便利）
+python -m youtube_analysis --channel @チャンネル名 --json
+
+# 分析結果を踏まえた動画台本を生成（ANTHROPIC_API_KEY 必須）
+python -m youtube_analysis --channel @チャンネル名 --script "動画タイトル"
 ```
 
 レポートは `reports/youtube/` に出力されます。
+
+### テスト
+
+```bash
+python -m unittest discover tests -v
+```
 
 ### GitHub Actions での定期実行
 

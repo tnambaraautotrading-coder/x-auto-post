@@ -59,6 +59,12 @@ def main() -> int:
     parser.add_argument("--max-videos", type=int, default=Config.MAX_VIDEOS)
     parser.add_argument("--out", default=Config.REPORT_DIR, help="レポート出力ディレクトリ")
     parser.add_argument("--no-claude", action="store_true", help="Claude 所見生成をスキップ")
+    parser.add_argument("--json", action="store_true", help="分析結果を JSON でも保存")
+    parser.add_argument(
+        "--script",
+        metavar="動画タイトル",
+        help="分析結果を踏まえた動画台本を Claude で生成 (ANTHROPIC_API_KEY 必須)",
+    )
     args = parser.parse_args()
 
     if args.demo:
@@ -91,6 +97,23 @@ def main() -> int:
     out_path = out_dir / f"{_safe_name(subject)}.md"
     out_path.write_text(report, encoding="utf-8")
     print(f"[OK] レポートを生成しました: {out_path}")
+
+    if args.json:
+        json_path = out_dir / f"{_safe_name(subject)}.json"
+        json_path.write_text(
+            json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
+        print(f"[OK] 分析データを保存しました: {json_path}")
+
+    if args.script and result.get("video_count"):
+        from .claude_insights import generate_script
+
+        script = generate_script(args.script, result)
+        if script:
+            script_path = out_dir / f"script_{_safe_name(args.script)}.md"
+            script_path.write_text(script + "\n", encoding="utf-8")
+            print(f"[OK] 台本を生成しました: {script_path}")
+
     return 0
 
 

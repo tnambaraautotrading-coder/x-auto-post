@@ -76,3 +76,78 @@ def generate_insights(result: dict) -> str | None:
 
     text = "".join(b.text for b in message.content if b.type == "text")
     return text.strip() or None
+
+
+SCRIPT_PROMPT = """あなたは YouTube 動画の放送作家です。
+以下はこれから作る動画のタイトルと、参考となるジャンル分析データ（伸びている動画の傾向）です。
+
+# 動画タイトル
+{title}
+
+# ジャンル分析データ (JSON)
+{data}
+
+分析データの傾向（伸びている動画の長さ・タイトルパターン・キーワード）を踏まえて、
+この動画の台本を日本語で書いてください。構成:
+
+## 台本: {title}
+
+### 冒頭フック (最初の15秒)
+- 視聴者が離脱しない掴みのセリフ（そのまま読める形で）
+
+### 本編
+- セクションごとに見出し + 話す内容のセリフ
+- 分析データで推奨される動画の長さに収まる分量にする
+
+### エンディング
+- チャンネル登録・次の動画への誘導
+
+### サムネイル文言案 (3案)
+"""
+
+
+def generate_script(title: str, result: dict) -> str | None:
+    """分析結果を踏まえた動画台本を Claude で生成する
+
+    API キー未設定・エラー時は None を返す。
+    """
+    if not Config.ANTHROPIC_API_KEY:
+        print("[INFO] ANTHROPIC_API_KEY 未設定のため台本生成はスキップします")
+        return None
+
+    import anthropic
+
+    compact = {
+        "duration_stats": result.get("duration_stats", []),
+        "title_features": result.get("title_features", []),
+        "title_length": result.get("title_length", {}),
+        "distinctive_words": result.get("distinctive_words", []),
+        "top_titles": [v["title"] for v in result.get("top_videos", [])],
+    }
+
+    client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
+    try:
+        with client.messages.stream(
+            model=MODEL,
+            max_tokens=32000,
+            thinking={"type": "adaptive"},
+            messages=[{
+                "role": "user",
+                "content": SCRIPT_PROMPT.format(
+                    title=title, data=json.dumps(compact, ensure_ascii=False)
+                ),
+            }],
+        ) as stream:
+            message = stream.get_final_message()
+    except anthropic.RateLimitError:
+        print("[WARN] Claude API がレート制限中のため台本生成をスキップします")
+        return None
+    except anthropic.APIStatusError as e:
+        print(f"[WARN] Claude API エラー ({e.status_code}) のため台本生成をスキップします")
+        return None
+    except anthropic.APIConnectionError:
+        print("[WARN] Claude API に接続できないため台本生成をスキップします")
+        return None
+
+    text = "".join(b.text for b in message.content if b.type == "text")
+    return text.strip() or None
