@@ -4,6 +4,9 @@ on:
   schedule:
     # 毎週月曜 9:00 JST (0:00 UTC)
     - cron: '0 0 * * 1'
+  # 一時的な動作確認用トリガー (マージ前に削除する)
+  push:
+    branches: [claude/instagram-reel-recreation-rs7ji4]
   workflow_dispatch:
     inputs:
       channel:
@@ -47,11 +50,19 @@ jobs:
           elif [ -n "${{ github.event.inputs.channel }}" ]; then
             python -m youtube_analysis --channel "${{ github.event.inputs.channel }}" --max-videos "${{ github.event.inputs.max_videos || '100' }}"
           elif [ -n "$YT_TARGET_CHANNEL" ]; then
-            python -m youtube_analysis --channel "$YT_TARGET_CHANNEL"
+            python -m youtube_analysis --channel "$YT_TARGET_CHANNEL" --json
           else
-            echo "分析対象が未指定です。workflow_dispatch の入力か、リポジトリ変数 YT_TARGET_CHANNEL を設定してください。"
-            exit 1
+            echo "YT_TARGET_CHANNEL 未設定のため、キーワード検索で動作確認します。"
+            python -m youtube_analysis --search "Claude Code 副業" --json
           fi
+
+      - name: Show report in log
+        if: always()
+        run: |
+          for f in reports/youtube/*.md; do
+            echo "===== $f ====="
+            cat "$f"
+          done
 
       - name: Upload report
         if: always()
