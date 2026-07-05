@@ -16,6 +16,14 @@ class Config:
     # 予約投稿設定
     POSTS_PER_DAY = int(os.getenv("POSTS_PER_DAY", "8"))
 
+    # YouTube 連携設定
+    YOUTUBE_CHANNEL_ID = os.getenv("YOUTUBE_CHANNEL_ID", "")
+    YOUTUBE_LOOKBACK_HOURS = int(os.getenv("YOUTUBE_LOOKBACK_HOURS", "24"))
+    YOUTUBE_POST_TEMPLATE = os.getenv(
+        "YOUTUBE_POST_TEMPLATE",
+        "📺 新しい動画を公開しました！\n{title}\n{url}"
+    )
+
     # ブラウザ設定
     HEADLESS = os.getenv("HEADLESS", "true").lower() == "true"
     SLOW_MO = int(os.getenv("SLOW_MO", "100"))
@@ -34,5 +42,13 @@ class Config:
             return False
         if not cls.X_PASSWORD:
             print("[ERROR] X_PASSWORD が設定されていません")
+            return False
+        return True
+
+    @classmethod
+    def validate_youtube(cls):
+        """YouTube 連携に必要な設定が存在するか検証"""
+        if not cls.YOUTUBE_CHANNEL_ID:
+            print("[ERROR] YOUTUBE_CHANNEL_ID が設定されていません")
             return False
         return True
