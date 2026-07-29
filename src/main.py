@@ -9,10 +9,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import Config
 from src.browser import XBrowser
-from src.poster import get_scheduled_message, post_message
+from src.poster import get_scheduled_message, get_scheduled_media, post_message
 
 
-async def run(slot=None, message=None):
+async def run(slot=None, message=None, media=None):
     """メイン実行関数"""
     print("=" * 50)
     print("X 予約投稿ツール")
@@ -33,8 +33,13 @@ async def run(slot=None, message=None):
         print("[ERROR] 投稿するメッセージがありません")
         sys.exit(1)
 
+    # 添付メディア取得 (引数優先、無ければスケジュールから)
+    media_path = media if media else get_scheduled_media(slot)
+
     print(f"[INFO] スロット: {slot}")
     print(f"[INFO] 投稿内容: {post_text[:80]}...")
+    if media_path:
+        print(f"[INFO] 添付メディア: {media_path}")
 
     # ブラウザ操作
     browser = XBrowser()
@@ -45,7 +50,7 @@ async def run(slot=None, message=None):
             print("[ERROR] ログインに失敗しました")
             sys.exit(1)
 
-        result = await post_message(browser.page, post_text)
+        result = await post_message(browser.page, post_text, media_path)
         if result:
             print("[SUCCESS] 投稿が完了しました！")
         else:
@@ -63,9 +68,10 @@ def main():
     parser = argparse.ArgumentParser(description="X 予約投稿ツール")
     parser.add_argument("--slot", type=int, default=None, help="スケジュールスロット番号 (1-8)")
     parser.add_argument("--message", type=str, default=None, help="投稿メッセージ（直接指定）")
+    parser.add_argument("--media", type=str, default=None, help="添付する動画/画像ファイルのパス")
     args = parser.parse_args()
 
-    asyncio.run(run(slot=args.slot, message=args.message))
+    asyncio.run(run(slot=args.slot, message=args.message, media=args.media))
 
 
 if __name__ == "__main__":

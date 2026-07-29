@@ -6,6 +6,8 @@ from datetime import datetime, timezone, timedelta
 
 JST = timezone(timedelta(hours=9))
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 SCHEDULE_SLOTS = {
     1: "09:00",
     2: "11:00",
@@ -37,8 +39,8 @@ def load_messages():
         return []
 
 
-def get_scheduled_message(slot=None):
-    """スケジュールスロットに基づいてメッセージを取得"""
+def get_scheduled_entry(slot=None):
+    """スケジュールスロットに基づいてエントリ(text/media を含む)を取得"""
     messages = load_messages()
     if not messages:
         print("[ERROR] メッセージリストが空です")
@@ -59,15 +61,53 @@ def get_scheduled_message(slot=None):
             slot = 1
 
     index = (slot - 1) % len(messages)
-    entry = messages[index]
+    return messages[index]
 
+
+def get_scheduled_message(slot=None):
+    """スケジュールスロットに基づいてメッセージ本文を取得"""
+    entry = get_scheduled_entry(slot)
+    if entry is None:
+        return None
     if isinstance(entry, dict):
         return entry.get("text", "")
     return str(entry)
 
 
-async def post_message(page, message):
-    """X にメッセージを投稿"""
+def get_scheduled_media(slot=None):
+    """スケジュールスロットに基づいて添付メディアのパスを取得 (無ければ None)"""
+    entry = get_scheduled_entry(slot)
+    if isinstance(entry, dict):
+        return resolve_media_path(entry.get("media"))
+    return None
+
+
+def resolve_media_path(media):
+    """メディアパスを解決する。相対パスはプロジェクトルート基準。"""
+    if not media:
+        return None
+    if os.path.isabs(media):
+        return media
+    return os.path.join(PROJECT_ROOT, media)
+
+
+async def _attach_media(page, media_path):
+    """投稿コンポーザにメディアファイルを添付する"""
+    abspath = resolve_media_path(media_path)
+    if not os.path.exists(abspath):
+        print(f"[ERROR] メディアファイルが見つかりません: {abspath}")
+        return False
+
+    print(f"[INFO] メディアを添付中: {abspath}")
+    file_input = page.locator('input[data-testid="fileInput"]')
+    await file_input.set_input_files(abspath)
+    await page.wait_for_timeout(3000)
+    print("[INFO] メディアのアップロードを開始しました")
+    return True
+
+
+async def post_message(page, message, media_path=None):
+    """X にメッセージを投稿 (media_path を指定すると動画/画像を添付)"""
     try:
         print(f"[INFO] 投稿を作成中: {message[:50]}...")
 
@@ -85,9 +125,26 @@ async def post_message(page, message):
         await tweet_box.fill(message)
         await page.wait_for_timeout(1000)
 
+        # メディアを添付 (任意)
+        if media_path:
+            attached = await _attach_media(page, media_path)
+            if not attached:
+                return False
+
         # 投稿ボタンをクリック
         post_button = page.locator('[data-testid="tweetButtonInline"]')
         await post_button.wait_for(state="visible", timeout=5000)
+
+        # メディアアップロード中は投稿ボタンが無効になるため有効化を待つ (最大120秒)
+        if media_path:
+            for _ in range(60):
+                disabled = await post_button.get_attribute("aria-disabled")
+                if disabled != "true":
+                    break
+                await page.wait_for_timeout(2000)
+            else:
+                print("[WARN] メディアのアップロードが完了しませんでした")
+
         await post_button.click()
         await page.wait_for_timeout(3000)
 
