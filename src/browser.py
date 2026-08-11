@@ -6,6 +6,18 @@ from src.config import Config
 
 SCREENSHOT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "screenshots")
 
+NEXT_BUTTON_SELECTORS = [
+    'text="次へ"',
+    'text="Next"',
+    '[role="button"]:has-text("次へ")',
+    '[role="button"]:has-text("Next")',
+]
+LOGIN_BUTTON_SELECTORS = [
+    '[data-testid="LoginForm_Login_Button"]',
+    'text="ログイン"',
+    'text="Log in"',
+]
+
 
 class XBrowser:
     """X (Twitter) のブラウザ操作を管理するクラス"""
@@ -24,6 +36,17 @@ class XBrowser:
         path = os.path.join(SCREENSHOT_DIR, f"{name}.png")
         await self.page.screenshot(path=path, full_page=True)
         print(f"[DEBUG] スクリーンショット保存: {path}")
+
+    async def _find_first(self, selectors):
+        """セレクタ候補のうち最初に見つかった要素を返す（なければ None）"""
+        for sel in selectors:
+            try:
+                loc = self.page.locator(sel)
+                if await loc.count() > 0:
+                    return loc.first
+            except Exception:
+                continue
+        return None
 
     async def launch(self):
         """ブラウザを起動"""
@@ -115,17 +138,7 @@ class XBrowser:
             await username_input.fill(Config.X_USERNAME)
             await self.save_screenshot("03_username_filled")
 
-            next_selectors = ['text="次へ"', 'text="Next"', '[role="button"]:has-text("次へ")', '[role="button"]:has-text("Next")']
-            next_button = None
-            for sel in next_selectors:
-                try:
-                    loc = self.page.locator(sel)
-                    if await loc.count() > 0:
-                        next_button = loc.first
-                        break
-                except Exception:
-                    continue
-
+            next_button = await self._find_first(NEXT_BUTTON_SELECTORS)
             if next_button:
                 await next_button.click()
             else:
@@ -139,14 +152,9 @@ class XBrowser:
                 if await email_input.is_visible(timeout=3000):
                     print("[INFO] メールアドレス確認を入力中...")
                     await email_input.fill(Config.X_EMAIL)
-                    for sel in next_selectors:
-                        try:
-                            loc = self.page.locator(sel)
-                            if await loc.count() > 0:
-                                await loc.first.click()
-                                break
-                        except Exception:
-                            continue
+                    next_button = await self._find_first(NEXT_BUTTON_SELECTORS)
+                    if next_button:
+                        await next_button.click()
                     await self.page.wait_for_timeout(3000)
             except Exception:
                 pass
@@ -157,17 +165,7 @@ class XBrowser:
             await password_input.fill(Config.X_PASSWORD)
             await self.save_screenshot("06_password_filled")
 
-            login_selectors = ['[data-testid="LoginForm_Login_Button"]', 'text="ログイン"', 'text="Log in"']
-            login_button = None
-            for sel in login_selectors:
-                try:
-                    loc = self.page.locator(sel)
-                    if await loc.count() > 0:
-                        login_button = loc.first
-                        break
-                except Exception:
-                    continue
-
+            login_button = await self._find_first(LOGIN_BUTTON_SELECTORS)
             if login_button:
                 await login_button.click()
             else:
