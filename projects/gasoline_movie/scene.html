@@ -1,0 +1,450 @@
+<meta charset="utf-8">
+<title>gasoline campaign 30s</title>
+<style>
+  /* ============================================================
+     全モーションは CSS アニメーション + 絶対時刻の animation-delay。
+     レンダラは document.getAnimations() を pause して currentTime を
+     一括で進めるため、フレームは t の純粋関数になり再現性がある。
+     数値のカウントアップだけは書式（カンマ区切り）の都合で
+     window.__tick(t) 側で描画する。
+     ============================================================ */
+  @property --n { syntax: "<integer>"; initial-value: 0; inherits: false; }
+
+  :root {
+    --bg: #070d1c; --bg-alt: #0e1830; --ink: #fff; --muted: #9fb0cd;
+    --accent: #ff9f1c; --accent-alt: #ffd166; --positive: #2ec4b6; --danger: #ef476f;
+    --e-out: cubic-bezier(.16,1,.3,1);
+    --e-io: cubic-bezier(.65,0,.35,1);
+    --pad: 7vmin;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: "IPAGothic", "IPAPGothic", "Noto Sans JP", sans-serif;
+    font-weight: 700;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+
+  /* ---------- 背景（30秒を通して連続） ---------- */
+  #bg { position: fixed; inset: -10%; z-index: 0; }
+  #bg .glow {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55;
+    animation: drift 30s linear both;
+  }
+  #bg .g1 { width: 62vw; height: 62vw; left: -12%; top: -18%; background: #1b3a8f; }
+  #bg .g2 { width: 55vw; height: 55vw; right: -14%; bottom: -20%; background: #b4560a; opacity: .42; animation-direction: reverse; }
+  #bg .g3 { width: 40vw; height: 40vw; left: 44%; top: 30%; background: #0d5c56; opacity: .3; }
+  @keyframes drift {
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    50%  { transform: translate3d(4vw,-3vh,0) scale(1.14); }
+    100% { transform: translate3d(-3vw,4vh,0) scale(1); }
+  }
+  #vignette {
+    position: fixed; inset: 0; z-index: 40; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(0,0,0,.62) 100%);
+  }
+  #grain {
+    position: fixed; inset: 0; z-index: 41; pointer-events: none; opacity: .16; mix-blend-mode: overlay;
+  }
+
+  /* ---------- シーン共通 ---------- */
+  .scene {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: var(--pad) calc(var(--pad) * 1.2);
+    opacity: 0;
+  }
+  .fx { animation-fill-mode: both; animation-play-state: paused; }
+  @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+  @keyframes zoomSlow { from { transform: scale(1) } to { transform: scale(1.05) } }
+
+  /* 要素の入り */
+  @keyframes up     { from { opacity: 0; transform: translateY(4.5vmin) } to { opacity: 1; transform: none } }
+  @keyframes upSoft { from { opacity: 0; transform: translateY(2.2vmin) } to { opacity: 1; transform: none } }
+  @keyframes pop    { from { opacity: 0; transform: scale(.86) } to { opacity: 1; transform: scale(1) } }
+  @keyframes wipe   { from { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0 0 0 0) } }
+  @keyframes barX   { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+  @keyframes blurIn { from { opacity: 0; filter: blur(1.4vmin); transform: scale(1.06) }
+                      to   { opacity: 1; filter: blur(0);      transform: scale(1) } }
+  @keyframes cardIn { from { opacity: 0; transform: perspective(1400px) rotateY(26deg) rotateX(14deg) translateY(6vmin) scale(.92) }
+                      to   { opacity: 1; transform: perspective(1400px) rotateY(-11deg) rotateX(7deg) translateY(0) scale(1) } }
+  @keyframes shine  { from { transform: translateX(-140%) skewX(-18deg) } to { transform: translateX(240%) skewX(-18deg) } }
+  @keyframes gauge  { from { stroke-dashoffset: var(--dash) } to { stroke-dashoffset: var(--dash-to) } }
+  @keyframes pulse  { 0%,100% { transform: scale(1) } 50% { transform: scale(1.045) } }
+  @keyframes ring   { 0% { opacity: 0; transform: scale(.9) } 18% { opacity: .5 } 100% { opacity: 0; transform: scale(1.5) } }
+
+  .u    { animation-name: up;     animation-duration: .95s; animation-timing-function: var(--e-out) }
+  .us   { animation-name: upSoft; animation-duration: .8s;  animation-timing-function: var(--e-out) }
+  .pp   { animation-name: pop;    animation-duration: .75s; animation-timing-function: var(--e-out) }
+  .wp   { animation-name: wipe;   animation-duration: .9s;  animation-timing-function: var(--e-io) }
+  .bi   { animation-name: blurIn; animation-duration: 1.1s; animation-timing-function: var(--e-out) }
+
+  /* ---------- タイポ ---------- */
+  .kicker {
+    font-size: 2.1vmin; letter-spacing: .34em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 2.4vmin;
+  }
+  .kicker.ja { letter-spacing: .16em; color: var(--muted); text-transform: none; }
+  .display { font-size: 12.5vmin; line-height: 1.02; letter-spacing: -.02em; }
+  .display .hl { color: var(--accent); }
+  .h2 { font-size: 6.4vmin; line-height: 1.14; letter-spacing: -.01em; }
+  .lead { font-size: 3.2vmin; color: var(--muted); letter-spacing: .04em; }
+  .note { font-size: 1.75vmin; color: var(--muted); opacity: .85; line-height: 1.6; letter-spacing: .02em; }
+  .accent-bar {
+    height: .9vmin; width: 14vmin; background: linear-gradient(90deg, var(--accent), var(--accent-alt));
+    border-radius: 99px; transform-origin: left center;
+    animation-name: barX; animation-duration: .7s; animation-timing-function: var(--e-io);
+  }
+
+  /* ---------- S1 hook ---------- */
+  #s1 { align-items: flex-start; }
+  #s1 .row { display: flex; align-items: flex-end; gap: 6vmin; width: 100%; }
+  .gauge-wrap { position: relative; width: 34vmin; height: 34vmin; flex: none; }
+  .gauge-wrap svg { width: 100%; height: 100%; transform: rotate(135deg); }
+  .gauge-num {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: .4vmin;
+  }
+  .gauge-num .v { font-size: 8.2vmin; line-height: 1; letter-spacing: -.02em; color: var(--danger); }
+  .gauge-num .u2 { font-size: 2.2vmin; color: var(--muted); letter-spacing: .12em; }
+
+  /* ---------- S2 problem ---------- */
+  #s2 { align-items: center; text-align: center; }
+  #s2 .big {
+    font-size: 17vmin; line-height: 1; letter-spacing: -.03em;
+    background: linear-gradient(180deg, var(--accent-alt), var(--accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #s2 .unit { font-size: 6vmin; color: var(--accent); }
+  #s2 .prefix { font-size: 4.4vmin; color: var(--ink); }
+
+  /* ---------- S3 reveal ---------- */
+  #s3 { flex-direction: row; align-items: center; gap: 5vmin; }
+  #s3 .left { flex: 1 1 54%; }
+  #s3 .right { flex: 1 1 46%; display: flex; align-items: center; justify-content: center; }
+  .price-tag { display: flex; align-items: baseline; gap: 1.2vmin; margin-top: 2.6vmin; }
+  .price-tag .pre { font-size: 3.6vmin; color: var(--muted); }
+  .price-tag .val {
+    font-size: 19vmin; line-height: .92; letter-spacing: -.04em; color: var(--accent);
+    text-shadow: 0 0 6vmin rgba(255,159,28,.35);
+  }
+  .price-tag .un { font-size: 5.4vmin; color: var(--accent-alt); }
+  .price-tag .suf { font-size: 5vmin; }
+  .card {
+    position: relative; width: 46vmin; aspect-ratio: 1.586;
+    border-radius: 3.2vmin; overflow: hidden;
+    background: linear-gradient(135deg, #12233f 0%, #24406e 55%, #0e1830 100%);
+    box-shadow: 0 6vmin 12vmin rgba(0,0,0,.6), inset 0 0 0 .22vmin rgba(255,255,255,.14);
+    animation-name: cardIn; animation-duration: 1.3s; animation-timing-function: var(--e-out);
+  }
+  .card .sheen {
+    position: absolute; inset: -20%; width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.30), transparent);
+    animation-name: shine; animation-duration: 1.5s; animation-timing-function: var(--e-io);
+  }
+  .card .chip {
+    position: absolute; left: 8%; top: 34%; width: 13%; aspect-ratio: 1.32; border-radius: .9vmin;
+    background: linear-gradient(135deg, var(--accent-alt), #b07b18);
+  }
+  .card .brand { position: absolute; left: 8%; top: 11%; font-size: 3.1vmin; letter-spacing: .04em; }
+  .card .holder { position: absolute; left: 8%; bottom: 10%; font-size: 1.9vmin; color: var(--muted); letter-spacing: .16em; }
+  .card .mark {
+    position: absolute; right: 7%; bottom: 9%; width: 9vmin; height: 9vmin; border-radius: 50%;
+    display: grid; place-items: center; font-size: 4.2vmin; color: #0b1224;
+    background: linear-gradient(135deg, var(--accent-alt), var(--accent));
+  }
+
+  /* ---------- S4 benefits ---------- */
+  #s4 .cards { display: flex; gap: 3vmin; margin-top: 4.4vmin; }
+  .bcard {
+    flex: 1; border-radius: 2.4vmin; padding: 4vmin 3.2vmin;
+    background: linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.035));
+    border: .2vmin solid rgba(255,255,255,.14);
+    backdrop-filter: blur(2px);
+    animation-name: up; animation-duration: .9s; animation-timing-function: var(--e-out);
+  }
+  .bcard .v { font-size: 9.4vmin; line-height: 1; color: var(--accent); letter-spacing: -.03em; }
+  .bcard .v .un { font-size: 3.4vmin; color: var(--accent-alt); margin-left: .4vmin; }
+  .bcard .lb { font-size: 3vmin; margin-top: 1.6vmin; }
+  .bcard .sb { font-size: 1.95vmin; color: var(--muted); margin-top: 1vmin; line-height: 1.5; }
+
+  /* ---------- S5 steps ---------- */
+  #s5 .steps { display: flex; align-items: stretch; gap: 2vmin; margin-top: 4.6vmin; }
+  .step { flex: 1; display: flex; flex-direction: column; gap: 1.4vmin;
+          animation-name: up; animation-duration: .85s; animation-timing-function: var(--e-out); }
+  .step .no {
+    font-size: 3vmin; color: #0b1224; width: 7.6vmin; height: 7.6vmin; border-radius: 50%;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent-alt), var(--accent));
+  }
+  .step .lb { font-size: 3.4vmin; margin-top: .8vmin; }
+  .step .sb { font-size: 2vmin; color: var(--muted); }
+  .step .line { height: .3vmin; background: linear-gradient(90deg, var(--accent), transparent); margin-top: 1.6vmin;
+                transform-origin: left; animation-name: barX; animation-duration: .8s; animation-timing-function: var(--e-io); }
+
+  /* ---------- S6 cta ---------- */
+  #s6 { align-items: center; text-align: center; }
+  .logo-lockup { display: flex; align-items: center; gap: 2.2vmin; margin-bottom: 3.4vmin; }
+  .logo-lockup .mk {
+    width: 9vmin; height: 9vmin; border-radius: 2.4vmin; display: grid; place-items: center;
+    font-size: 4.6vmin; color: #0b1224;
+    background: linear-gradient(135deg, var(--accent-alt), var(--accent));
+  }
+  .logo-lockup .nm { font-size: 4.4vmin; letter-spacing: .02em; }
+  .btn {
+    position: relative; margin-top: 4vmin; padding: 2.6vmin 7vmin; border-radius: 99px;
+    font-size: 3.6vmin; color: #0b1224;
+    background: linear-gradient(135deg, var(--accent-alt), var(--accent));
+    box-shadow: 0 2.4vmin 6vmin rgba(255,159,28,.34);
+    animation-name: pop; animation-duration: .7s; animation-timing-function: var(--e-out);
+  }
+  .btn-wrap { position: relative; display: inline-flex; }
+  .btn-ring {
+    position: absolute; inset: 0; border-radius: 99px; border: .35vmin solid var(--accent);
+    animation-name: ring; animation-duration: 1.6s; animation-iteration-count: infinite;
+    animation-timing-function: var(--e-out);
+  }
+  #s6 .url { margin-top: 3.4vmin; font-size: 2.6vmin; color: var(--accent-alt); letter-spacing: .08em; }
+  #s6 .period { margin-top: 1.6vmin; font-size: 2.2vmin; color: var(--muted); }
+  #s6 .disc { margin-top: 3.6vmin; max-width: 78%; }
+
+  /* ---------- draft badge ---------- */
+  #draft {
+    position: fixed; top: 2.4vmin; right: 2.6vmin; z-index: 60;
+    font-size: 1.7vmin; letter-spacing: .12em; padding: 1vmin 1.8vmin; border-radius: 99px;
+    color: #0b1224; background: rgba(255,209,102,.92);
+    box-shadow: 0 .6vmin 2vmin rgba(0,0,0,.4);
+  }
+</style>
+
+<div id="bg"><div class="glow g1 fx"></div><div class="glow g2 fx"></div><div class="glow g3 fx"></div></div>
+<svg id="grain"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div id="stage"></div>
+<div id="vignette"></div>
+
+<script>
+/* レンダラが下のトークンを content.json の中身に置換して読み込む */
+const C = window.__CONTENT__ || /*__CONTENT_JSON__*/ null;
+const S = C.scenes, B = C.brand;
+
+/* ---- ブランド色を CSS 変数へ ---- */
+const cm = { bg:'--bg', bgAlt:'--bg-alt', ink:'--ink', inkMuted:'--muted',
+             accent:'--accent', accentAlt:'--accent-alt', positive:'--positive', danger:'--danger' };
+for (const [k, v] of Object.entries(B.colors || {})) if (cm[k]) document.documentElement.style.setProperty(cm[k], v);
+
+const stage = document.getElementById('stage');
+
+function el(tag, cls, html) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+/* 絶対時刻 at（秒）で入りアニメを開始する */
+function anim(node, cls, at) {
+  node.classList.add('fx', ...cls.split(' ').filter(Boolean));
+  node.style.animationDelay = at + 's';
+  return node;
+}
+/* シーンの器：start でフェードイン、end 直前でフェードアウト、全体を通してゆっくりズーム */
+function scene(id, def) {
+  const s = el('div', 'scene fx');
+  s.id = id;
+  const dur = def.end - def.start;
+  s.style.animationName = 'fadeIn, fadeOut, zoomSlow';
+  s.style.animationDuration = '.55s, .5s, ' + dur + 's';
+  s.style.animationDelay = def.start + 's, ' + (def.end - 0.5) + 's, ' + def.start + 's';
+  s.style.animationTimingFunction = 'ease-out, ease-in, linear';
+  s.style.animationFillMode = 'both, both, both';
+  s.style.animationPlayState = 'paused';
+  stage.appendChild(s);
+  return s;
+}
+const esc = t => String(t).replace(/[&<>]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]));
+
+/* =========================== S1 : hook =========================== */
+{
+  const d = S.hook, s = scene('s1', d), t = d.start;
+  s.appendChild(anim(el('div', 'kicker ja', esc(d.kicker)), 'us', t + .35));
+  const row = el('div', 'row');
+  const txt = el('div');
+  txt.appendChild(anim(el('div', 'display', esc(d.line1)), 'bi', t + .55));
+  txt.appendChild(anim(el('div', 'display', '<span class="hl">' + esc(d.line2) + '</span>'), 'bi', t + .8));
+  txt.appendChild(anim(el('div', 'accent-bar'), '', t + 1.5));
+  txt.querySelector('.accent-bar').style.marginTop = '3.2vmin';
+  row.appendChild(txt);
+
+  const g = el('div', 'gauge-wrap');
+  const R = 46, CIRC = 2 * Math.PI * R, ARC = CIRC * 0.75;
+  g.innerHTML =
+    '<svg viewBox="0 0 120 120">' +
+      '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="9" ' +
+        'stroke-linecap="round" stroke-dasharray="' + ARC + ' ' + CIRC + '"/>' +
+      '<circle class="gg" cx="60" cy="60" r="' + R + '" fill="none" stroke="var(--danger)" stroke-width="9" ' +
+        'stroke-linecap="round" stroke-dasharray="' + ARC + ' ' + CIRC + '"/>' +
+    '</svg>' +
+    '<div class="gauge-num"><div class="v" id="s1v">0</div><div class="u2">' + esc(d.priceUnit) + '</div></div>';
+  const gg = g.querySelector('.gg');
+  gg.classList.add('fx');
+  gg.style.setProperty('--dash', ARC);
+  gg.style.setProperty('--dash-to', ARC * 0.12);
+  gg.style.animationName = 'gauge';
+  gg.style.animationDuration = '1.8s';
+  gg.style.animationTimingFunction = 'cubic-bezier(.16,1,.3,1)';
+  anim(g, 'pp', t + .9);
+  row.appendChild(g);
+  s.appendChild(row);
+  row.style.marginTop = '4vmin';
+}
+
+/* ========================= S2 : problem ========================= */
+{
+  const d = S.problem, s = scene('s2', d), t = d.start;
+  s.appendChild(anim(el('div', 'lead', esc(d.lead)), 'us', t + .4));
+  const wrap = el('div');
+  wrap.style.cssText = 'display:flex;align-items:baseline;justify-content:center;gap:1.4vmin;margin-top:2vmin';
+  wrap.appendChild(anim(el('span', 'prefix', esc(d.amountPrefix)), 'us', t + .6));
+  wrap.appendChild(anim(el('span', 'big', '0'), 'pp', t + .7)).id = 's2v';
+  wrap.appendChild(anim(el('span', 'unit', esc(d.amountUnit)), 'us', t + 1.0));
+  s.appendChild(wrap);
+  const n = anim(el('div', 'note', esc(d.note)), 'us', t + 1.6);
+  n.style.marginTop = '3.4vmin';
+  s.appendChild(n);
+}
+
+/* ========================= S3 : reveal ========================== */
+{
+  const d = S.reveal, s = scene('s3', d), t = d.start;
+  const L = el('div', 'left');
+  L.appendChild(anim(el('div', 'kicker', esc(d.kicker)), 'us', t + .35));
+  L.appendChild(anim(el('div', 'h2', esc(d.title)), 'wp', t + .5));
+  const p = el('div', 'price-tag');
+  p.appendChild(anim(el('span', 'pre', esc(d.discountPrefix)), 'us', t + 1.0));
+  p.appendChild(anim(el('span', 'val', esc(d.discountValue)), 'bi', t + 1.15));
+  p.appendChild(anim(el('span', 'un', esc(d.discountUnit)), 'us', t + 1.45));
+  p.appendChild(anim(el('span', 'suf', esc(d.discountSuffix)), 'us', t + 1.6));
+  L.appendChild(p);
+  s.appendChild(L);
+
+  const R = el('div', 'right');
+  const card = el('div', 'card');
+  card.innerHTML =
+    '<div class="brand">' + esc(d.cardLabel) + '</div>' +
+    '<div class="chip"></div>' +
+    '<div class="holder">' + esc(d.cardHolder) + '</div>' +
+    '<div class="mark">' + esc(B.logoMark) + '</div>';
+  const sh = el('div', 'sheen');
+  card.appendChild(sh);
+  card.style.animationDelay = (t + .7) + 's';
+  card.classList.add('fx');
+  sh.style.animationDelay = (t + 1.6) + 's';
+  sh.classList.add('fx');
+  R.appendChild(card);
+  s.appendChild(R);
+}
+
+/* ======================== S4 : benefits ========================= */
+{
+  const d = S.benefits, s = scene('s4', d), t = d.start;
+  s.appendChild(anim(el('div', 'kicker ja', esc(d.title)), 'us', t + .35));
+  const bar = anim(el('div', 'accent-bar'), '', t + .5);
+  bar.style.marginBottom = '1vmin';
+  s.appendChild(bar);
+  const cards = el('div', 'cards');
+  d.items.forEach((it, i) => {
+    const c = el('div', 'bcard',
+      '<div class="v">' + esc(it.value) + '<span class="un">' + esc(it.unit) + '</span></div>' +
+      '<div class="lb">' + esc(it.label) + '</div>' +
+      '<div class="sb">' + esc(it.sub) + '</div>');
+    c.classList.add('fx');
+    c.style.animationDelay = (t + .75 + i * 0.22) + 's';
+    cards.appendChild(c);
+  });
+  s.appendChild(cards);
+}
+
+/* ========================== S5 : steps ========================== */
+{
+  const d = S.steps, s = scene('s5', d), t = d.start;
+  s.appendChild(anim(el('div', 'kicker ja', esc(d.title)), 'us', t + .35));
+  const bar = anim(el('div', 'accent-bar'), '', t + .5);
+  s.appendChild(bar);
+  const box = el('div', 'steps');
+  d.items.forEach((it, i) => {
+    const c = el('div', 'step',
+      '<div class="no">' + esc(it.no) + '</div>' +
+      '<div class="lb">' + esc(it.label) + '</div>' +
+      '<div class="sb">' + esc(it.sub) + '</div>');
+    c.classList.add('fx');
+    c.style.animationDelay = (t + .8 + i * 0.24) + 's';
+    const ln = el('div', 'line');
+    ln.classList.add('fx');
+    ln.style.animationDelay = (t + 1.0 + i * 0.24) + 's';
+    c.appendChild(ln);
+    box.appendChild(c);
+  });
+  s.appendChild(box);
+}
+
+/* =========================== S6 : cta =========================== */
+{
+  const d = S.cta, s = scene('s6', d), t = d.start;
+  const lk = el('div', 'logo-lockup',
+    '<div class="mk">' + esc(B.logoMark) + '</div><div class="nm">' + esc(B.name) + '</div>');
+  s.appendChild(anim(lk, 'pp', t + .3));
+  s.appendChild(anim(el('div', 'lead', esc(d.lead)), 'us', t + .5));
+  const h = anim(el('div', 'display', esc(d.title)), 'bi', t + .65);
+  h.style.fontSize = '9.4vmin';
+  h.style.marginTop = '1.4vmin';
+  s.appendChild(h);
+
+  const bw = el('div', 'btn-wrap');
+  const btn = el('div', 'btn', esc(d.button));
+  btn.classList.add('fx');
+  btn.style.animationDelay = (t + 1.1) + 's';
+  const rg = el('div', 'btn-ring');
+  rg.classList.add('fx');
+  rg.style.animationDelay = (t + 1.5) + 's';
+  bw.appendChild(rg); bw.appendChild(btn);
+  s.appendChild(bw);
+
+  s.appendChild(anim(el('div', 'url', esc(B.url)), 'us', t + 1.4));
+  s.appendChild(anim(el('div', 'period', esc(d.period)), 'us', t + 1.55));
+  s.appendChild(anim(el('div', 'note disc', esc(d.disclaimer)), 'us', t + 1.8));
+}
+
+/* ------------------------- draft badge -------------------------- */
+if (C.draft) {
+  const b = el('div', null, esc(C.draftBadge || 'SAMPLE'));
+  b.id = 'draft';
+  document.body.appendChild(b);
+}
+
+/* ==================================================================
+   数値カウントは書式（カンマ区切り）の都合で JS 側。t の純関数。
+   ================================================================== */
+const easeOutExpo = x => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+function ramp(t, start, dur) { return easeOutExpo(Math.max(0, Math.min(1, (t - start) / dur))); }
+const fmt = n => Math.round(n).toLocaleString('en-US');
+
+const s1v = document.getElementById('s1v');
+const s2v = document.getElementById('s2v');
+
+window.__tick = function (t) {
+  if (s1v) s1v.textContent = fmt(S.hook.priceFrom * ramp(t, S.hook.start + 0.9, 1.8));
+  if (s2v) s2v.textContent = fmt(S.problem.amount * ramp(t, S.problem.start + 0.7, 1.7));
+};
+
+/* 全アニメーションを停止して手動シーク可能にする */
+window.__seek = function (tSec) {
+  const ms = tSec * 1000;
+  for (const a of document.getAnimations()) { a.pause(); a.currentTime = ms; }
+  window.__tick(tSec);
+};
+window.__ready = true;
+</script>

@@ -1,0 +1,91 @@
+{
+  "_comment": "動画の文言・数値・配色はすべてこのファイルで管理する。LP の実データが入るまで draft=true にしておくと SAMPLE バッジが焼き込まれる。",
+  "draft": true,
+  "draftBadge": "SAMPLE / 文言・数値は仮",
+
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "duration": 30.0
+  },
+
+  "brand": {
+    "name": "〈社名〉",
+    "serviceName": "〈カード名〉",
+    "logoMark": "G",
+    "url": "〈キャンペーンURL〉",
+    "colors": {
+      "bg": "#070d1c",
+      "bgAlt": "#0e1830",
+      "ink": "#ffffff",
+      "inkMuted": "#9fb0cd",
+      "accent": "#ff9f1c",
+      "accentAlt": "#ffd166",
+      "positive": "#2ec4b6",
+      "danger": "#ef476f"
+    }
+  },
+
+  "scenes": {
+    "hook": {
+      "start": 0.0,
+      "end": 5.2,
+      "kicker": "毎月の給油、その1円が効いてくる。",
+      "line1": "ガソリン代、",
+      "line2": "高いまま。",
+      "priceFrom": 185,
+      "priceUnit": "円/L"
+    },
+    "problem": {
+      "start": 5.0,
+      "end": 9.8,
+      "lead": "年間 1,000L 給油するなら",
+      "amount": 24000,
+      "amountPrefix": "差は約",
+      "amountUnit": "円",
+      "note": "※ 仮の試算値。実際の条件に差し替えます。"
+    },
+    "reveal": {
+      "start": 9.6,
+      "end": 16.0,
+      "kicker": "GASOLINE DISCOUNT CAMPAIGN",
+      "title": "〈カード名〉",
+      "discountPrefix": "いつでも",
+      "discountValue": "◯",
+      "discountUnit": "円/L",
+      "discountSuffix": "引き",
+      "cardLabel": "〈カード名〉",
+      "cardHolder": "〈カード券面イメージ〉"
+    },
+    "benefits": {
+      "start": 15.8,
+      "end": 22.0,
+      "title": "選ばれる理由",
+      "items": [
+        { "value": "◯", "unit": "円/L", "label": "給油はいつでも割引", "sub": "全国〈◯◯〉店で利用可能" },
+        { "value": "0", "unit": "円", "label": "年会費", "sub": "初年度〈条件〉" },
+        { "value": "◯", "unit": "分", "label": "WEBで申込完了", "sub": "審査は最短〈◯〉日" }
+      ]
+    },
+    "steps": {
+      "start": 21.8,
+      "end": 26.2,
+      "title": "お申し込みは3ステップ",
+      "items": [
+        { "no": "01", "label": "WEBで申込", "sub": "必要事項を入力" },
+        { "no": "02", "label": "審査・発行", "sub": "最短〈◯〉日" },
+        { "no": "03", "label": "給油で割引", "sub": "対象SSで使うだけ" }
+      ]
+    },
+    "cta": {
+      "start": 26.0,
+      "end": 30.0,
+      "lead": "キャンペーン実施中",
+      "title": "今すぐお申し込み",
+      "button": "お申し込みはこちら",
+      "period": "受付期間：〈YYYY年M月D日〉まで",
+      "disclaimer": "※ 割引条件・対象店舗・年会費等は公式サイトの記載が優先されます。審査結果によりご希望に添えない場合があります。"
+    }
+  }
+}
