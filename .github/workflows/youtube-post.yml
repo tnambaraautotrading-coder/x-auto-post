@@ -1,0 +1,66 @@
+name: YouTube New Video Post
+
+on:
+  schedule:
+    # 毎時 15 分に新着動画をチェック
+    - cron: '15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: youtube-post
+  cancel-in-progress: false
+
+jobs:
+  youtube-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Check and post new YouTube video
+        continue-on-error: true
+        env:
+          X_USERNAME: ${{ secrets.X_USERNAME }}
+          X_PASSWORD: ${{ secrets.X_PASSWORD }}
+          X_EMAIL: ${{ secrets.X_EMAIL }}
+          YOUTUBE_CHANNEL_ID: ${{ vars.YOUTUBE_CHANNEL_ID }}
+          HEADLESS: 'true'
+        run: |
+          python src/main.py --youtube
+
+      - name: Commit announced state
+        run: |
+          if ! git diff --quiet posts/youtube_state.json 2>/dev/null; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add posts/youtube_state.json
+            git commit -m "Update YouTube announced state [skip ci]"
+            git push
+          fi
+
+      - name: Upload debug screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-debug-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
+          retention-days: 7

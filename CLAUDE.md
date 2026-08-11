@@ -64,7 +64,7 @@ main.py (CLI 解析・オーケストレーション)
 | `src/main.py` | CLI (`argparse`) の解析、全体のオーケストレーション、エラー時 `sys.exit(1)` |
 | `src/config.py` | `Config` クラス。`python-dotenv` で `.env` を読み込み、クラス属性として公開。`validate()` で `X_USERNAME` / `X_PASSWORD` の存在を確認 |
 | `src/browser.py` | `XBrowser` クラス。Playwright の起動、anti-detection 設定、X へのログインフロー（ユーザー名 → メール確認 → パスワード）、デバッグ用スクリーンショット |
-| `src/poster.py` | `SCHEDULE_SLOTS`（スロット番号 → JST 時刻）、`load_messages()`（`posts/messages.json` 読込）、`get_scheduled_message()`、`post_message()`（投稿の DOM 操作） |
+| `src/poster.py` | `load_messages()`（`posts/messages.json` 読込）、`get_scheduled_message()`（JST 時刻から該当スロットを判定）、`post_message()`（投稿の DOM 操作） |
 | `posts/messages.json` | 投稿文の定義。`schedule` 配列に `slot` / `time_utc` / `time_jst` / `text` を持つ |
 
 ### 設定（環境変数）
@@ -76,17 +76,19 @@ main.py (CLI 解析・オーケストレーション)
 | `X_USERNAME` | （必須） | X のユーザー名 |
 | `X_PASSWORD` | （必須） | X のパスワード |
 | `X_EMAIL` | - | ログイン時のメール確認画面で使用 |
-| `POSTS_PER_DAY` | `8` | 1 日の投稿数 |
 | `HEADLESS` | `true` | ヘッドレス実行の可否 |
 | `SLOW_MO` | `100` | Playwright の操作間ウェイト (ms) |
 | `BROWSER_TIMEOUT` | `30000` | ブラウザ操作のデフォルトタイムアウト (ms) |
+| `YOUTUBE_CHANNEL_ID` | - | YouTube 告知に使うチャンネル ID（`UC` で始まる） |
+| `YOUTUBE_LOOKBACK_HOURS` | `24` | 新着とみなす遡り時間 |
+| `YOUTUBE_POST_TEMPLATE` | 既定文 | 告知文テンプレート（`{title}` / `{url}` を置換） |
 
 ### スケジュールと自動実行
 
-- 投稿スロットは **1 日 8 回**。`poster.py` の `SCHEDULE_SLOTS` が真実の源（JST 09/11/13/15/17/19/21/23 時）。
+- 投稿スロットは **1 日 8 回**。`posts/messages.json` の `slot` / `time_jst` が真実の源（JST 09/11/13/15/17/19/21/23 時）。
 - `.github/workflows/auto-post.yml` が cron で自動実行（**UTC 0/2/4/6/8/10/12/14 時 = JST の各スロット時刻**）。`workflow_dispatch` で `message` / `slot` を渡して手動実行も可能。
 - ワークフローは `continue-on-error: true` で失敗しても落ちず、`screenshots/` 配下のデバッグ画像を artifact としてアップロードします（保持 7 日）。
-- **スロット時刻を変更するときは、`SCHEDULE_SLOTS`・`messages.json`・`auto-post.yml` の cron の 3 箇所を必ず揃えて更新すること**（UTC ⇄ JST は 9 時間差）。
+- **スロット時刻を変更するときは、`messages.json` と `auto-post.yml` の cron の 2 箇所を必ず揃えて更新すること**（UTC ⇄ JST は 9 時間差）。
 
 ### Python のコード規約
 
