@@ -34,6 +34,11 @@ export HF_API_SECRET=...
 
 認証は `Authorization: Key {api_key}:{api_key_secret}` 形式。
 
+API キーを使わず、Higgsfield の Web UI で生成した動画を使うこともできる。
+その場合は `shots.json` の各カットに `video_url`（または直接 `out/clips/<id>.mp4` を置く）を
+書けば、`seedance.mjs` は API を叩かずダウンロードだけ行う。プロンプトは `still` / `motion` を
+そのまま UI に貼ればよい。
+
 ### 2. 素材カットを生成する
 
 ```bash

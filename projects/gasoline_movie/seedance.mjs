@@ -34,7 +34,10 @@ mkdirSync(clipsDir, { recursive: true });
 const shots = cfg.shots.filter(s => !only || s.id === only);
 if (!shots.length) throw new Error(`--only ${only} に一致するカットがありません`);
 
-if (!dryRun && (!KEY || !SECRET)) {
+/* video_url を全カットに書いてある場合は API キー無しで動かせる */
+const allManual = shots.every(s => s.video_url || existsSync(join(clipsDir, `${s.id}.mp4`)));
+
+if (!dryRun && !allManual && (!KEY || !SECRET)) {
   console.error(
     'HF_API_KEY / HF_API_SECRET が未設定です。\n' +
     'cloud.higgsfield.ai で API キーを発行し、環境変数に入れてから再実行してください。\n' +
@@ -124,6 +127,13 @@ async function runShot(shot) {
   if (existsSync(clip) && !args.includes('--force')) {
     console.log(`[${shot.id}] 既にクリップがあるのでスキップ（--force で再生成）`);
     return { id: shot.id, file: clip, reused: true };
+  }
+
+  /* Higgsfield の Web UI で生成済みのものを使う場合。shots.json に
+     video_url を書いておけば API を叩かずにダウンロードだけする。   */
+  if (shot.video_url) {
+    const file = await download(shot, shot.video_url);
+    return { id: shot.id, file, sourceUrl: shot.video_url, manual: true };
   }
 
   let imageUrl = shot.image_url;
