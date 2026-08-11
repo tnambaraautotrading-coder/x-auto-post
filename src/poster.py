@@ -3,19 +3,10 @@ import json
 import os
 from datetime import datetime, timezone, timedelta
 
+from src.config import Config
+
 
 JST = timezone(timedelta(hours=9))
-
-SCHEDULE_SLOTS = {
-    1: "09:00",
-    2: "11:00",
-    3: "13:00",
-    4: "15:00",
-    5: "17:00",
-    6: "19:00",
-    7: "21:00",
-    8: "23:00",
-}
 
 
 def load_messages():
@@ -38,7 +29,10 @@ def load_messages():
 
 
 def get_scheduled_message(slot=None):
-    """スケジュールスロットに基づいてメッセージを取得"""
+    """スケジュールスロットに基づいてメッセージを取得
+
+    スケジュール（スロット番号と時刻）は posts/messages.json を唯一の定義源とする。
+    """
     messages = load_messages()
     if not messages:
         print("[ERROR] メッセージリストが空です")
@@ -47,19 +41,22 @@ def get_scheduled_message(slot=None):
     if slot is not None:
         slot = int(slot)
     else:
-        now = datetime.now(JST)
-        current_hour = now.hour
-        slot = None
-        for s, time_str in SCHEDULE_SLOTS.items():
-            hour = int(time_str.split(":")[0])
-            if hour == current_hour:
-                slot = s
-                break
-        if slot is None:
-            slot = 1
+        current_hour = datetime.now(JST).hour
+        slot = next(
+            (
+                int(m["slot"])
+                for m in messages
+                if isinstance(m, dict) and "slot" in m and "time_jst" in m
+                and int(str(m["time_jst"]).split(":")[0]) == current_hour
+            ),
+            1,
+        )
 
-    index = (slot - 1) % len(messages)
-    entry = messages[index]
+    # slot フィールドが一致するエントリを優先し、なければインデックスで選択
+    entry = next(
+        (m for m in messages if isinstance(m, dict) and m.get("slot") == slot),
+        messages[(slot - 1) % len(messages)],
+    )
 
     if isinstance(entry, dict):
         return entry.get("text", "")
@@ -72,7 +69,7 @@ async def post_message(page, message):
         print(f"[INFO] 投稿を作成中: {message[:50]}...")
 
         # ホームページに移動
-        await page.goto("https://x.com/home", wait_until="networkidle")
+        await page.goto(Config.X_HOME_URL, wait_until="networkidle")
         await page.wait_for_timeout(2000)
 
         # 投稿テキストエリアをクリック
