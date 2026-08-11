@@ -214,6 +214,22 @@
   #s6 .disc { margin-top: 3.6vmin; max-width: 78%; }
 
   /* ---------- draft badge ---------- */
+  /* ---------- overlay モード ----------
+     Seedance の実写映像に重ねるときは、背景・ビネット・グレインを落として
+     テロップだけを透過 PNG で書き出す。可読性のため下地の陰影だけ残す。   */
+  body.overlay-mode { background: transparent !important; }
+  body.overlay-mode #bg,
+  body.overlay-mode #grain { display: none !important; }
+  body.overlay-mode #vignette {
+    background: linear-gradient(180deg, rgba(4,8,18,.66) 0%, rgba(4,8,18,.30) 38%,
+                                        rgba(4,8,18,.34) 62%, rgba(4,8,18,.72) 100%);
+  }
+  body.overlay-mode .scene { text-shadow: 0 .3vmin 1.6vmin rgba(0,0,0,.55); }
+  body.overlay-mode .bcard {
+    background: linear-gradient(160deg, rgba(6,12,26,.72), rgba(6,12,26,.52));
+    border-color: rgba(255,255,255,.22);
+  }
+
   #draft {
     position: fixed; top: 2.4vmin; right: 2.6vmin; z-index: 60;
     font-size: 1.7vmin; letter-spacing: .12em; padding: 1vmin 1.8vmin; border-radius: 99px;
@@ -446,5 +462,8 @@ window.__seek = function (tSec) {
   for (const a of document.getAnimations()) { a.pause(); a.currentTime = ms; }
   window.__tick(tSec);
 };
+if (new URLSearchParams(location.search).get('overlay') === '1' || window.__OVERLAY__) {
+  document.body.classList.add('overlay-mode');
+}
 window.__ready = true;
 </script>

@@ -29,6 +29,10 @@ const { width, height, fps, duration } = content.video;
 const args = process.argv.slice(2);
 const previewIdx = args.indexOf('--preview');
 const previewTimes = previewIdx >= 0 ? args[previewIdx + 1].split(',').map(Number) : null;
+const overlayIdx = args.indexOf('--overlay');
+/* --overlay <dir> … 背景なしのテロップだけを連番透過 PNG で書き出す
+   （Seedance の実写クリップに重ねる用。assemble.mjs から呼ばれる）      */
+const overlayDir = overlayIdx >= 0 ? (args[overlayIdx + 1] || join(HERE, 'out', 'overlay')) : null;
 const OUT = process.env.OUT || join(HERE, 'out', 'gasoline_campaign_30s.mp4');
 
 async function openPage(browser) {
@@ -38,7 +42,8 @@ async function openPage(browser) {
     reducedMotion: 'no-preference',
   });
   page.on('pageerror', e => console.error('page error:', e.message));
-  await page.setContent(html, { waitUntil: 'load' });
+  const doc = overlayDir ? '<script>window.__OVERLAY__=true</script>' + html : html;
+  await page.setContent(doc, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__ready === true);
   await page.evaluate(() => document.fonts.ready);
   return page;
@@ -70,6 +75,26 @@ if (previewTimes) {
   process.exit(0);
 }
 
+/* ------------- オーバーレイ（透過 PNG 連番）書き出し ------------- */
+if (overlayDir) {
+  const page = await openPage(browser);
+  mkdirSync(overlayDir, { recursive: true });
+  const n = Math.round(duration * fps);
+  const t0 = Date.now();
+  for (let i = 0; i < n; i++) {
+    await page.evaluate(tt => window.__seek(tt), i / fps);
+    const buf = await page.screenshot({ type: 'png', omitBackground: true });
+    writeFileSync(join(overlayDir, String(i + 1).padStart(5, '0') + '.png'), buf);
+    if (i % 60 === 0 || i === n - 1) {
+      process.stdout.write(`\roverlay ${i + 1}/${n}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+    }
+  }
+  process.stdout.write('\n');
+  await browser.close();
+  console.log('overlay frames:', overlayDir);
+  process.exit(0);
+}
+
 /* ------------------------------ 本番 ------------------------------ */
 const total = Math.round(duration * fps);
 mkdirSync(dirname(OUT), { recursive: true });
@@ -92,10 +117,14 @@ const ffDone = new Promise((res, rej) => {
   ff.on('close', code => (code === 0 ? res() : rej(new Error(`ffmpeg exit ${code}\n${ffErr.slice(-4000)}`))));
 });
 
+/* 書き込みエラーはここで一度だけ拾う（フレームごとに listener を足さない） */
+let stdinErr = null;
+ff.stdin.on('error', e => { stdinErr = e; });
+
 const write = buf => new Promise((res, rej) => {
+  if (stdinErr) return rej(stdinErr);
   if (ff.stdin.write(buf)) return res();
   ff.stdin.once('drain', res);
-  ff.stdin.once('error', rej);
 });
 
 const page = await openPage(browser);
