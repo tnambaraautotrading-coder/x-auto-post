@@ -9,15 +9,15 @@
  *   FFMPEG  … ffmpeg バイナリのパス（未指定なら imageio-ffmpeg 同梱版）
  *   OUT     … 出力ファイル名
  */
-import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { spawn } from 'node:child_process';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadChromium, resolveFfmpeg } from './env.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const FFMPEG = process.env.FFMPEG
-  || '/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2';
+const chromium = await loadChromium();
+const FFMPEG = resolveFfmpeg();
 
 const content = JSON.parse(readFileSync(join(HERE, 'content.json'), 'utf8'));
 const htmlSrc = readFileSync(join(HERE, 'scene.html'), 'utf8');

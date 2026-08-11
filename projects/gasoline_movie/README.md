@@ -145,6 +145,26 @@ document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000 })
    `seedance.mjs` は素材を生成できない（エンドポイント自体には到達可能で、
    未認証だと 401 `Invalid credentials` が返る状態まで確認済み）。
 
+## 手元のPCで動かす場合
+
+スクリプトは Chromium と ffmpeg の在り処を `env.mjs` で吸収しているので、
+クラウド環境でも手元の Mac / Linux でも同じものが動く。
+
+```bash
+cd projects/gasoline_movie
+npm install
+npx playwright install chromium   # 手元では初回だけ必要
+brew install ffmpeg               # macOS の場合。libx264 が要る
+
+npm run preview   # テロップの構図確認
+npm run captions  # テロップだけの 30 秒 MP4
+npm run build     # 素材＋テロップの合成
+```
+
+日本語フォントは `scene.html` で IPAGothic を先頭に指定している。
+手元に無い場合は Noto Sans JP など好みのゴシックに差し替えるとよい
+（`font-family` の一箇所だけ）。ウェイトを持つフォントのほうが仕上がりは良い。
+
 ## 制作環境の前提
 
 - Chromium は Playwright 同梱のものを使う（`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`）

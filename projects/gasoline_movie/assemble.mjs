@@ -15,10 +15,10 @@ import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveFfmpeg } from './env.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const FFMPEG = process.env.FFMPEG
-  || '/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2';
+const FFMPEG = resolveFfmpeg();
 
 const args = process.argv.slice(2);
 const keepOverlay = args.includes('--keep-overlay');
