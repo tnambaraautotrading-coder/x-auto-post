@@ -47,3 +47,6 @@ cookies/
 secrets/
 *.pem
 *.key
+
+# 動画レンダリング出力
+projects/*/out/

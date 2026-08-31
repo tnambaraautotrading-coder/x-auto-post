@@ -1,0 +1,16 @@
+{
+  "name": "gasoline-movie",
+  "private": true,
+  "type": "module",
+  "description": "ガソリン割引キャンペーン 30秒動画（Higgsfield Seedance の素材 + コードによるテロップ合成）",
+  "scripts": {
+    "shots:dry": "node seedance.mjs --dry-run",
+    "shots": "node seedance.mjs",
+    "preview": "node render.mjs --preview 1.8,7.2,13.6,18.4,23.6,28.4",
+    "captions": "node render.mjs",
+    "build": "node assemble.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

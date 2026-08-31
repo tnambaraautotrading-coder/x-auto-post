@@ -1,0 +1,64 @@
+{
+  "_comment": "Higgsfield で作る素材カット。ドキュメントで確認できる Seedance のモデルは image-to-video のみで image_url が要るため、(1) Soul で静止画を作って URL を得る → (2) その URL を Seedance に渡して動かす、の 2 段構成にしている。日本語テロップは AI に描かせず overlay 側で合成するので、プロンプトでは文字を出さないよう明示している。start/end は 30 秒タイムライン上の配置。",
+
+  "imageModel": "higgsfield-ai/soul/standard",
+  "model": "bytedance/seedance/v1/pro/image-to-video",
+
+  "imageDefaults": {
+    "aspect_ratio": "16:9",
+    "resolution": "2K"
+  },
+
+  "transition": 0.5,
+
+  "shots": [
+    {
+      "id": "s1_hook",
+      "start": 0.0,
+      "end": 5.2,
+      "duration": 10,
+      "still": "Photorealistic cinematic still, close-up of a fuel nozzle inserted into a car's fuel port at a modern Japanese gas station at dusk, pump display glowing softly out of focus, shallow depth of field, teal and amber color grade, no text, no letters, no numbers, no logos",
+      "motion": "Slow push-in toward the fuel nozzle, subtle handheld drift, faint heat shimmer, cinematic"
+    },
+    {
+      "id": "s2_problem",
+      "start": 5.2,
+      "end": 9.8,
+      "duration": 10,
+      "still": "Photorealistic cinematic still, elevated view of a quiet Japanese suburban road at blue hour, a family sedan on the road, warm street lights reflecting on wet asphalt, shallow depth of field, no text, no letters, no numbers, no logos",
+      "motion": "Slow overhead dolly following the car, gentle parallax, street lights drifting past, cinematic"
+    },
+    {
+      "id": "s3_reveal",
+      "start": 9.8,
+      "end": 16.0,
+      "duration": 10,
+      "still": "Photorealistic product still, extreme close-up of a hand holding a blank matte dark navy payment card, soft studio rim light, clean dark background, premium commercial look, no text, no letters, no numbers, no logos",
+      "motion": "Slow orbit around the card, light sweeping across its surface, shallow depth of field, cinematic"
+    },
+    {
+      "id": "s4_benefits",
+      "start": 16.0,
+      "end": 22.0,
+      "duration": 10,
+      "still": "Photorealistic cinematic still, bright modern Japanese gas station forecourt in the morning, clean white canopy, cars refuelling, optimistic warm sunlight, no text, no letters, no numbers, no logos",
+      "motion": "Smooth gliding camera move to the right across the forecourt, gentle parallax, cinematic"
+    },
+    {
+      "id": "s5_steps",
+      "start": 22.0,
+      "end": 26.2,
+      "duration": 5,
+      "still": "Photorealistic cinematic still, over-the-shoulder view of a person holding a smartphone in a car interior, soft daylight through the windshield, shallow depth of field, blank phone screen, no text, no letters, no numbers, no logos",
+      "motion": "Slow push-in toward the phone, thumb taps the blank screen once, subtle handheld motion, cinematic"
+    },
+    {
+      "id": "s6_cta",
+      "start": 26.2,
+      "end": 30.0,
+      "duration": 5,
+      "still": "Photorealistic cinematic still, wide shot of a car on an open highway at golden hour, subtle lens flare, expansive sky, hopeful uplifting mood, no text, no letters, no numbers, no logos",
+      "motion": "Camera slowly rises as the car drives away into the distance, lens flare drifting, cinematic"
+    }
+  ]
+}
